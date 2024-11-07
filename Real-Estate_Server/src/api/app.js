@@ -3,8 +3,7 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
-const bodyParser = require("body-parser");
-require("dotenv").config("../.env");
+require("dotenv").config({ path: path.resolve(__dirname, "./.env") });
 const connectDB = require("./utils/connection");
 const debug = require("debug")("backend:server");
 const http = require("http");
@@ -24,7 +23,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(
   cors({
     credentials: true,
-    origin: "*",
+    origin: process.env.CLIENT_URL || "*",
     optionsSuccessStatus: 200,
   })
 );
@@ -34,9 +33,19 @@ app.set("port", port);
 
 const server = http.createServer(app);
 
-server.listen(port);
-server.on("error", onError);
-server.on("listening", onListening);
+(async () => {
+  try {
+    await connectDB(); 
+    console.log("Connected to MongoDB");
+
+    server.listen(port);
+    server.on("error", onError);
+    server.on("listening", onListening);
+  } catch (error) {
+    console.error("Failed to connect to MongoDB:", error);
+    process.exit(1); 
+  }
+})();
 
 function normalizePort(val) {
   const port = parseInt(val, 10);
@@ -77,12 +86,8 @@ function onListening() {
   const addr = server.address();
   const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   debug("Listening on " + bind);
-  connectDB();
   console.log(`Server listening on port ${port}`);
 }
-
-app.use(bodyParser.json({ limit: "15mb" }));
-app.use(bodyParser.urlencoded({ limit: "15mb", extended: true }));
 
 app.use(router);
 
