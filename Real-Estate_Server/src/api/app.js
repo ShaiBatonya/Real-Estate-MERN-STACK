@@ -20,13 +20,25 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+const allowedOrigins = [
+  'https://real-estate-mern-stack-jh6dq7siz-star-quest.vercel.app', 
+  'http://localhost:5174', 
+];
+
 app.use(
   cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
-    origin: process.env.CLIENT_URL || "*",
     optionsSuccessStatus: 200,
   })
 );
+
 
 const port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
